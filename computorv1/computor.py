@@ -1,6 +1,6 @@
 import re
 import sys
-# from math import 
+from math import sqrt
 from fractions import Fraction
 
 def parse_equation(equation):
@@ -11,7 +11,7 @@ def parse_equation(equation):
         terms = re.findall(r'([+-]?\d*\.?\d*)\*?X\^(\d+)', side)
         coeffs = {}
         for coeff, power in terms:
-            if coeff in ("", "+"): coeff = "1"
+            if coeff in (git@vogsphere.42heilbronn.de:vogsphere/intra-uuid-21675683-b383-407a-b51c-8ac2c1cef12e-6828196-otuyishi", "+"): coeff = "1"
             elif coeff == "-": coeff = "-1"
             coeffs[int(power)] = coeffs.get(int(power), 0.0) + float(coeff)
         return coeffs
@@ -39,8 +39,6 @@ def degree(coeffs):
     deg = max((p for p, c in coeffs.items() if abs(c) > 1e-12), default=0)
     return deg
 
-def sqrt(number):
-    return (number ** 0.5)
 
 def solve(coeffs):
     deg = degree(coeffs)
