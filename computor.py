@@ -1,6 +1,5 @@
 import re
 import sys
-# from math import 
 from fractions import Fraction
 
 def parse_equation(equation):
@@ -8,12 +7,17 @@ def parse_equation(equation):
     left, right = equation.split("=")
 
     def parse_side(side):
-        terms = re.findall(r'([+-]?\d*\.?\d*)\*?X\^(\d+)', side)
         coeffs = {}
+        terms = re.findall(r'([+-]?\d*\.?\d*)\*?X\^(\d+)', side)
         for coeff, power in terms:
             if coeff in ("", "+"): coeff = "1"
             elif coeff == "-": coeff = "-1"
             coeffs[int(power)] = coeffs.get(int(power), 0.0) + float(coeff)
+
+        constants = re.findall(r'([+-]?\d+(?:\.\d+)?)(?!\*?X\^)', side)
+        for const in constants:
+            coeffs[0] = coeffs.get(0, 0.0) + float(const)
+
         return coeffs
 
     left_terms = parse_side(left)
@@ -27,12 +31,13 @@ def parse_equation(equation):
 
 def reduce_form(coeffs):
     parts = []
-    for p in sorted(coeffs.keys()):
+    for p in sorted(coeffs.keys(), reverse=True):
         c = coeffs[p]
         if abs(c) < 1e-12:
             continue
-        parts.append(f"{c:.6g} * X^{p}")
-    return " + ".join(parts) if parts else "0"
+        sign = "+" if c > 0 and parts else ""
+        parts.append(f"{sign}{c:.6g} * X^{p}")
+    return " ".join(parts) if parts else "0"
 
 
 def degree(coeffs):
