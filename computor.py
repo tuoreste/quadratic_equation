@@ -1,6 +1,29 @@
 import re
 import sys
 
+def abs(x):
+    if x < 0:
+        return x * -1
+    return x
+
+def sqrt(num):
+    a = 1.0
+    step = 0.1
+    tolerance = 0.01
+
+    while True:
+        b = a * a
+        if abs(b - num) < tolerance:
+            break
+        elif b > num:
+            prev = a - step
+            if abs(prev*prev - num) < abs(b - num):
+                return (round(a, 2))
+            else:
+                return (round(a, 2))
+        a += step
+    return (round(a, 2))
+
 def parse_equation(equation):
     equation = equation.replace(" ", "")
     left, right = equation.split("=")
@@ -39,24 +62,6 @@ def reduce_form(coeffs):
 def degree(coeffs):
     deg = max((p for p, c in coeffs.items() if abs(c) > 1e-12), default=0)
     return deg
-
-def sqrt(num):
-    a = 1.0
-    step = 0.1
-    tolerance = 0.01
-
-    while True:
-        b = a * a
-        if abs(b - num) < tolerance:
-            break
-        elif b > num:
-            prev = a - step
-            if abs(prev*prev - num) < abs(b - num):
-                return (round(a, 2))
-            else:
-                return (round(a, 2))
-        a += step
-    return (round(a, 2))
 
 def solve(coeffs):
     deg = degree(coeffs)
