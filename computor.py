@@ -1,6 +1,5 @@
 import re
 import sys
-from fractions import Fraction
 
 def parse_equation(equation):
     equation = equation.replace(" ", "")
@@ -9,14 +8,11 @@ def parse_equation(equation):
     def parse_side(side):
         coeffs = {}
         terms = re.findall(r'([+-]?\d*\.?\d*)\*?X\^(\d+)', side)
+
         for coeff, power in terms:
             if coeff in ("", "+"): coeff = "1"
             elif coeff == "-": coeff = "-1"
             coeffs[int(power)] = coeffs.get(int(power), 0.0) + float(coeff)
-
-        constants = re.findall(r'([+-]?\d+(?:\.\d+)?)(?!\*?X\^)', side)
-        for const in constants:
-            coeffs[0] = coeffs.get(0, 0.0) + float(const)
 
         return coeffs
 
@@ -44,8 +40,23 @@ def degree(coeffs):
     deg = max((p for p, c in coeffs.items() if abs(c) > 1e-12), default=0)
     return deg
 
-def sqrt(number):
-    return (number ** 0.5)
+def sqrt(num):
+    a = 1.0
+    step = 0.1
+    tolerance = 0.01
+
+    while True:
+        b = a * a
+        if abs(b - num) < tolerance:
+            break
+        elif b > num:
+            prev = a - step
+            if abs(prev*prev - num) < abs(b - num):
+                return (round(a, 2))
+            else:
+                return (round(a, 2))
+        a += step
+    return (round(a, 2))
 
 def solve(coeffs):
     deg = degree(coeffs)
@@ -64,7 +75,7 @@ def solve(coeffs):
         a = coeffs.get(2, 0)
         b = coeffs.get(1, 0)
         c = coeffs.get(0, 0)
-        D = b**2 - 4*a*c
+        D = b*b - 4*a*c
         if D > 0:
             print("Discriminant is strictly positive, the two solutions are:")
             sol1 = (-b + sqrt(D)) / (2*a)
