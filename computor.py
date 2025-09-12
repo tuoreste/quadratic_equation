@@ -30,12 +30,32 @@ def parse_equation(equation):
 
     def parse_side(side):
         coeffs = {}
-        terms = re.findall(r'([+-]?\d*\.?\d*)\*?X\^(\d+)', side)
 
-        for coeff, power in terms:
-            if coeff in ("", "+"): coeff = "1"
-            elif coeff == "-": coeff = "-1"
-            coeffs[int(power)] = coeffs.get(int(power), 0.0) + float(coeff)
+        tokens = re.findall(r'([+-]?\s*\d*\.?\d*)\s*\*?\s*X(?:\^(\d+))?|([+-]?\s*\d+\.?\d*)', side)
+
+        for coeff, power, const in tokens:
+            coeff = coeff.replace(" ", "")
+            const = const.replace(" ", "")
+
+            if const:
+                c = float(const)
+                coeffs[0] = coeffs.get(0, 0) + c
+            else:
+                if coeff in ("", "+"):
+                    c = 1.0
+                elif coeff == "-":
+                    c = -1.0
+                else:
+                    c = float(coeff)
+
+                if power == "":
+                    p = 1
+                elif power is None:
+                    p = 1
+                else:
+                    p = int(power)
+
+                coeffs[p] = coeffs.get(p, 0) + c
 
         return coeffs
 
