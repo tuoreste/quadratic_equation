@@ -28,6 +28,7 @@ def parse_equation(equation):
     equation = equation.replace(" ", "")
     left, right = equation.split("=")
 
+    # can be handled even better!
     def check_side(side):
         for c in side:
             if c.isalpha() and c not in ("X", "x"):
