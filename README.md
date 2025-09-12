@@ -131,7 +131,5 @@ Discriminant is strictly negative, no real solution.
 ### Dependencies
 ```python
 import re          # Regex parsing
-import sys         # Command-line arguments  
-import math        # sqrt() for quadratic formula
-from fractions import Fraction  # Imported but unused
+import sys         # Command-line arguments
 ```
