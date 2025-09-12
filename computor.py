@@ -31,7 +31,7 @@ def parse_equation(equation):
     def parse_side(side):
         coeffs = {}
 
-        tokens = re.findall(r'([+-]?\s*\d*\.?\d*)\s*\*?\s*X(?:\^(\d+))?|([+-]?\s*\d+\.?\d*)', side)
+        tokens = re.findall(r'([+-]?\s*\d*\.?\d*)\s*\*?\s*X(?:\^([+-]?\d*\.?\d+))?|([+-]?\s*\d+\.?\d*)', side)
 
         for coeff, power, const in tokens:
             coeff = coeff.replace(" ", "")
@@ -53,7 +53,12 @@ def parse_equation(equation):
                 elif power is None:
                     p = 1
                 else:
-                    p = int(power)
+                    if (float(power)) % 1 != 0:
+                        print("Error: Decimal Power not supported.")
+                        sys.exit(1)
+                        return
+                    else:
+                        p = int(power)
 
                 coeffs[p] = coeffs.get(p, 0) + c
 
