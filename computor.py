@@ -31,6 +31,10 @@ def parse_equation(equation):
     # can be handled even better!
     def check_side(side):
         for c in side:
+            if c == "+" or c == "-":
+                if side[side.index(c) + 1] not in "0123456789Xx":
+                    print(f"Error: Unsupported format near '{c}'")
+                    sys.exit(1)
             if c.isalpha() and c not in ("X", "x"):
                 print(f"Error: Unsupported format, must use 'X' as variable name, {c} not accepted")
                 sys.exit(1)
