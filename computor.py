@@ -28,6 +28,18 @@ def parse_equation(equation):
     equation = equation.replace(" ", "")
     left, right = equation.split("=")
 
+    def check_side(side):
+        for c in side:
+            if c.isalpha() and c not in ("X", "x"):
+                print(f"Error: Unsupported format, must use 'X' as variable name, {c} not accepted")
+                sys.exit(1)
+            if c in ("x"):
+                print(f"Error: Unsupported format, must use 'X' as variable name, {c} not accepted.")
+                sys.exit(1)
+
+    check_side(left)
+    check_side(right)
+
     def parse_side(side):
         coeffs = {}
 
