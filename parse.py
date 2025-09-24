@@ -45,6 +45,16 @@ def parse(equation):
             print(f"Error: Consecutive operator signs detected. Two or more operators cannot follow each other.")
             sys.exit(1)
         
+        # Check for multiple ^ in the same term (like 2^1^2)
+        if re.search(r'[0-9]\^[^+\-]*\^', side):
+            print(f"Error: Multiple exponentiation operators (^) in the same term are not allowed.")
+            sys.exit(1)
+        
+        # Check for equation sides ending with operators
+        if re.search(r'[+\-*^]$', side):
+            print(f"Error: Equation cannot end with an operator")
+            sys.exit(1)
+        
         terms = {}  # dictionary of terms where key=power, value=coefficient
         
         # Split into terms while preserving signs and respecting parentheses
@@ -66,6 +76,11 @@ def parse(equation):
             # if it is empty after ^ there should be atleast + and number otherwise it is an error
             if re.search(r'\^[\+\-\*/(). ]*$', term):
                 print(f"Error parsing term '{term}': Power cannot be empty after '^'")
+                sys.exit(1)
+            
+            # Check for trailing operators
+            if re.search(r'[+\-*^]$', term):
+                print(f"Error parsing term '{term}': Term cannot end with an operator")
                 sys.exit(1)
             
 
@@ -159,13 +174,15 @@ def parse(equation):
                 print(f"Error: Exponential expressions like '{term}' are not allowed. Only polynomial expressions are supported.")
                 sys.exit(1)
             
-            # Split by variable to get coefficient and power parts
-            var_pattern = r'([^Xx]*)[Xx](\^.*)?'
+            # Parse terms with implicit multiplication (like "21x2" = 21*x*2)
+            # Pattern: [coefficient]X[additional_coefficient][^power] - must match entire term
+            var_pattern = r'^([^Xx]*)[Xx]([0-9]*\.?[0-9]*)(\^.*)?$'
             match = re.match(var_pattern, term, re.IGNORECASE)
             
             if match:
                 coeff_part = match.group(1) or '1'
-                power_part = match.group(2)
+                additional_coeff_part = match.group(2) or '1'
+                power_part = match.group(3)
                 
                 # Check if coefficient part contains ^ (which would be invalid)
                 if '^' in coeff_part:
@@ -182,6 +199,14 @@ def parse(equation):
                         coeff = float(coeff_part)
                     except ValueError:
                         raise ValueError(f"Invalid coefficient: {coeff_part}")
+                
+                # Parse additional coefficient (implicit multiplication)
+                if additional_coeff_part and additional_coeff_part != '1':
+                    try:
+                        additional_coeff = float(additional_coeff_part)
+                        coeff *= additional_coeff
+                    except ValueError:
+                        raise ValueError(f"Invalid additional coefficient: {additional_coeff_part}")
                 
                 # Parse power
                 if power_part is None:
@@ -202,10 +227,16 @@ def parse(equation):
 
                 return sign * coeff, power
             else:
-                raise ValueError(f"Invalid term format: {term}")
+                print(f"Error parsing term '{term}': Invalid term format")
+                sys.exit(1)
         else:
             # Handle constant terms and number powers (e.g., "2^3", "5")
             if '^' in term:
+                # Check for multiple ^ operators which should be an error
+                if term.count('^') > 1:
+                    print(f"Error: Multiple consecutive ^ operators in '{term}' are not allowed.")
+                    sys.exit(1)
+                
                 # Check if this is a number raised to a power
                 base_and_power = term.split('^', 1)
                 base_part = base_and_power[0]
@@ -220,9 +251,11 @@ def parse(equation):
                     base = float(base_part)
                     # Parse and evaluate the power expression
                     power_value = parse_power_expression(power_part)
+                    if power_value is None:
+                        raise ValueError("Power expression evaluated to None")
                     result = base ** power_value
                     return sign * result, 0
-                except ValueError as e:
+                except (ValueError, TypeError) as e:
                     raise ValueError(f"Invalid number power expression: {term}")
             else:
                 # Simple constant term (power 0)
