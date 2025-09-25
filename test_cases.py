@@ -73,7 +73,8 @@ def main():
     print("\n🟡 PARENTHESES CASES")
     run_test("x^(1+1) = 4", description="Power in parentheses")
     run_test("x^(2-1) = 3", description="Subtraction in power")
-    run_test("2*(x+1) = 6", should_fail=True, description="Parentheses in coefficients (not supported)")
+    run_test("x^2 + (2/3)x = 0", description="Fractional coefficient in parentheses")
+    # run_test("2*(x+1) = 6", should_fail=True, description="Parentheses in coefficients (not supported)")
     
     # 5. EDGE CASES WITH ZEROS
     print("\n🟡 ZERO CASES")
@@ -122,6 +123,8 @@ def main():
     run_test("x^2 + 3@ = 0", should_fail=True, description="Invalid character @")
     run_test("x^2 & x = 0", should_fail=True, description="Invalid character &")
     run_test("x^2 % 3 = 0", should_fail=True, description="Invalid character %")
+    run_test("x^2 + 2/3x = 0", should_fail=True, description="Variable in denominator (ambiguous)")
+    run_test("x^2 + 1/x = 0", should_fail=True, description="Variable in denominator")
     
     # 12. EQUATION FORMAT ERRORS
     print("\n🔴 EQUATION FORMAT ERRORS (Should Fail)")

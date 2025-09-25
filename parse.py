@@ -160,8 +160,18 @@ def parse(equation):
                 print("Error: Unsupported parentheses expression")
                 sys.exit(1)
         
-        # Check for consecutive operator signs (2 or more operators following each other)
-        if re.search(r'[+\-*^]{2,}', side):
+        # Check for consecutive operator signs
+        # Allow up to 2 consecutive + or - (like +- or --), but reject other combinations
+        if re.search(r'[*^]{2,}', side):  # Multiple * or ^ in a row
+            print("Error: Consecutive operators")
+            sys.exit(1)
+        if re.search(r'[+\-]{3,}', side):  # More than 2 + or - in a row
+            print("Error: Consecutive operators")
+            sys.exit(1)
+        if re.search(r'[+\-][*^]|[*^][+\-]', side):  # Mix of +/- with */^
+            print("Error: Consecutive operators")
+            sys.exit(1)
+        if re.search(r'[*^][*^]', side):  # Mix of * and ^
             print("Error: Consecutive operators")
             sys.exit(1)
         
@@ -191,6 +201,12 @@ def parse(equation):
                     raise ValueError("Invalid characters")
             except ValueError as e:
                 print(f"Error: {e}")
+                sys.exit(1)
+            
+            # Check for variables in denominators (like 2/3x which could be 2/(3x))
+            # This would create negative powers which we don't support
+            if re.search(r'/[^()]*[Xx]', term, re.IGNORECASE):
+                print("Error: Variables in denominators not supported")
                 sys.exit(1)
             
             # if it is empty after ^ there should be atleast + and number otherwise it is an error
@@ -313,6 +329,8 @@ def parse(equation):
                 print("Error: Exponential expressions not allowed")
                 sys.exit(1)
             
+
+            
             # Parse terms with implicit multiplication (like "21x2" = 21*x*2)
             # Pattern: [coefficient]X[additional_coefficient][^power] - must match entire term
             var_pattern = r'^([^Xx]*)[Xx]([0-9]*\.?[0-9]*)(\^.*)?$'
@@ -335,9 +353,19 @@ def parse(equation):
                     coeff = -1
                 else:
                     try:
-                        coeff = float(coeff_part)
-                    except ValueError:
-                        raise ValueError(f"Invalid coefficient: {coeff_part}")
+                        # Handle parentheses with fractions like (2/3)
+                        if coeff_part.startswith('(') and coeff_part.endswith(')'):
+                            expr = coeff_part[1:-1]  # Remove parentheses
+                            # Only allow simple arithmetic for safety
+                            if re.match(r'^[0-9+\-*/.\s]+$', expr):
+                                coeff = eval(expr)
+                            else:
+                                raise ValueError("Invalid expression in parentheses")
+                        else:
+                            coeff = float(coeff_part)
+                    except (ValueError, SyntaxError, ZeroDivisionError):
+                        print("Error: Invalid coefficient format")
+                        sys.exit(1)
                 
                 # Parse additional coefficient (implicit multiplication)
                 if additional_coeff_part and additional_coeff_part != '1':
@@ -345,7 +373,8 @@ def parse(equation):
                         additional_coeff = float(additional_coeff_part)
                         coeff *= additional_coeff
                     except ValueError:
-                        raise ValueError(f"Invalid additional coefficient: {additional_coeff_part}")
+                        print("Error: Invalid coefficient format")
+                        sys.exit(1)
                 
                 # Parse power
                 if power_part is None:
@@ -395,14 +424,16 @@ def parse(equation):
                     result = base ** power_value
                     return sign * result, 0
                 except (ValueError, TypeError) as e:
-                    raise ValueError(f"Invalid number power expression: {term}")
+                    print("Error: Invalid number power expression")
+                    sys.exit(1)
             else:
                 # Simple constant term (power 0)
                 try:
                     coeff = float(term) if term else 0
                     return sign * coeff, 0
                 except ValueError:
-                    raise ValueError(f"Invalid constant term")
+                    print("Error: Invalid constant term")
+                    sys.exit(1)
     
     def parse_power_expression(expr):
         """Parse power expression, handling brackets and simple expressions"""
