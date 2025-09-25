@@ -5,41 +5,35 @@ Contains functions for solving quadratic equations and formatting output.
 
 from math_utils import abs, sqrt
 
+"""Convert coefficient dictionary to readable polynomial string."""
 def reduce_form(coeffs):
-    """Convert coefficient dictionary to readable polynomial string."""
     parts = []
     for p in sorted(coeffs.keys(), reverse=True):
         c = coeffs[p]
         if abs(c) < 1e-12:
             continue
         
-        # Format the coefficient
         if c == int(c):
             coeff_str = str(int(c))
         else:
             coeff_str = f"{c:.6g}"
         
-        # Handle the sign and spacing
         if c > 0 and parts:
             sign = " + "
         elif c < 0:
             sign = " - "
-            coeff_str = coeff_str[1:]  # Remove the negative sign from coefficient
+            coeff_str = coeff_str[1:]
         else:
             sign = ""
         
-        # Format the term based on power
         if p == 0:
-            # Constant term - just show the coefficient
             term = f"{coeff_str}"
         elif p == 1:
-            # Linear term - show as coefficient * X (without ^1)
             if abs(c) == 1:
                 term = "X" if coeff_str == "1" else "-X"
             else:
                 term = f"{coeff_str} * X"
         else:
-            # Higher powers - show as coefficient * X^power
             if abs(c) == 1:
                 term = f"X^{p}" if coeff_str == "1" else f"-X^{p}"
             else:
@@ -50,13 +44,13 @@ def reduce_form(coeffs):
     result = "".join(parts) if parts else "0"
     return result
 
+"""Find the degree (highest power) of the polynomial."""
 def degree(coeffs):
-    """Find the degree (highest power) of the polynomial."""
     deg = max((p for p, c in coeffs.items() if abs(c) > 1e-12), default=0)
     return deg
 
+"""Solve the polynomial equation based on its degree."""
 def solve(coeffs):
-    """Solve the polynomial equation based on its degree."""
     deg = degree(coeffs)
     if deg == 0:
         if abs(coeffs.get(0, 0)) < 1e-12:

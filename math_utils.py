@@ -2,14 +2,14 @@
 Mathematical utility functions for quadratic equation solver.
 """
 
+"""Custom absolute value function."""
 def abs(x):
-    """Custom absolute value function."""
     if x < 0:
         return x * -1
     return x
 
+"""Custom square root implementation using Newton's method."""
 def sqrt(num):
-    """Custom square root implementation using Newton's method."""
     a = 1.0
     step = 0.1
     tolerance = 0.01
