@@ -16,9 +16,13 @@ def split_terms_with_parentheses(expression):
             current_term += char
         elif char in '+-' and paren_depth == 0:
             # Only split on + or - when not inside parentheses
-            if current_term:
+            # Don't split if this is the start of the expression or if the current term is empty/just operators
+            if current_term and not re.match(r'^[+\-]*$', current_term):
                 terms.append(current_term)
-            current_term = char if char == '-' else ""
+                current_term = char if char == '-' else ""
+            else:
+                # This + or - is part of the coefficient, not a separator
+                current_term += char
         else:
             current_term += char
     
@@ -34,6 +38,15 @@ def parse(equation):
         left, right = equation.split('=')
     except ValueError as e:
         print("Error: Invalid equation format")
+        sys.exit(1)
+    
+    # Check for empty sides
+    if not left.strip():
+        print("Error: Empty left side of equation")
+        sys.exit(1)
+    
+    if not right.strip():
+        print("Error: Empty right side of equation")
         sys.exit(1)
 
 

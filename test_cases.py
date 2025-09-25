@@ -87,7 +87,7 @@ def main():
     print("\n🟡 SIGN CASES")
     run_test("-x^2 + x = 0", description="Negative leading coefficient")
     run_test("x^2 + -x = 0", description="Plus negative")
-    run_test("--x = 0", should_fail=True, description="Double negative (should fail)")
+    run_test("--x = 0", description="Double negative (equals +x)")
     run_test("+-x = 0", should_fail=True, description="Plus minus (should fail)")
     
     # 7. INVALID POWER CASES
@@ -131,6 +131,9 @@ def main():
     run_test("x^2 + x", should_fail=True, description="Missing equals sign")
     run_test("x^2 = x = 0", should_fail=True, description="Multiple equals signs")
     run_test("", should_fail=True, description="Empty equation")
+    run_test(" = x^2", should_fail=True, description="Empty left side")
+    run_test("x^2 = ", should_fail=True, description="Empty right side")
+    run_test("= ", should_fail=True, description="Both sides empty")
     
     # 13. POWER EXPRESSION ERRORS
     print("\n🔴 POWER EXPRESSION ERRORS (Should Fail)")
