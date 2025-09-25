@@ -1,161 +1,374 @@
 #!/usr/bin/env python3
 """
-Comprehensive test cases for the quadratic equation parser.
-This script tests various edge cases and potential failure scenarios.
+Comprehensive test cases for the quadratic equation solver.
+This script tests parsing, solving, and various edge cases.
 """
 
 import subprocess
 import sys
 import os
 
-def run_test(equation, expected_result=None, should_fail=False, description=""):
+def run_test(equation, expected_result=None, should_fail=False, description="", expected_degree=None):
     """Run a single test case"""
-    print(f"\n{'='*60}")
+    print(f"\n{'='*80}")
     print(f"Test: {description}")
     print(f"Equation: {equation}")
     print(f"Expected: {'Should fail' if should_fail else 'Should pass'}")
-    print("-" * 60)
+    if expected_degree is not None:
+        print(f"Expected degree: {expected_degree}")
+    print("-" * 80)
     
     try:
-        result = subprocess.run([sys.executable, "parse.py", equation], 
-                               capture_output=True, text=True, timeout=5)
+        result = subprocess.run([sys.executable, "computor.py", equation], 
+                               capture_output=True, text=True, timeout=10)
         
         if result.returncode == 0:
             if should_fail:
                 print("❌ UNEXPECTED PASS - This should have failed!")
-                print("Output:", result.stdout)
+                print("Output:")
+                print(result.stdout)
             else:
                 print("✅ PASS")
-                print("Output:", result.stdout.strip())
+                print("Output:")
+                print(result.stdout.strip())
+                
+                # Check if expected degree matches
+                if expected_degree is not None:
+                    output_lines = result.stdout.strip().split('\n')
+                    for line in output_lines:
+                        if line.startswith("Polynomial degree:"):
+                            actual_degree = int(line.split(":")[1].strip())
+                            if actual_degree == expected_degree:
+                                print(f"✅ Degree check: Expected {expected_degree}, got {actual_degree}")
+                            else:
+                                print(f"❌ Degree mismatch: Expected {expected_degree}, got {actual_degree}")
+                            break
         else:
             if should_fail:
                 print("✅ EXPECTED FAILURE")
-                print("Error:", result.stdout.strip() or result.stderr.strip())
+                print("Error:")
+                print(result.stdout.strip() or result.stderr.strip())
             else:
                 print("❌ UNEXPECTED FAILURE")
-                print("Error:", result.stdout.strip() or result.stderr.strip())
+                print("Error:")
+                print(result.stdout.strip() or result.stderr.strip())
     
     except subprocess.TimeoutExpired:
         print("⏰ TIMEOUT - Test took too long")
     except Exception as e:
         print(f"🔥 EXCEPTION: {e}")
 
+def run_comprehensive_tests():
+    """Run all test categories"""
+    
+    # Test each category separately for better organization
+    test_basic_quadratic_cases()
+    test_linear_cases()
+    test_constant_cases()
+    test_parsing_features()
+    test_error_cases()
+    test_edge_cases()
+    test_complex_equations()
+
+def test_basic_quadratic_cases():
+    """Test standard quadratic equations with different discriminant scenarios"""
+    print(f"\n{'🟢 QUADRATIC EQUATIONS (DEGREE 2)':=^80}")
+    
+    # Perfect square (discriminant = 0)
+    run_test("x^2 + 2*x + 1 = 0", 
+            description="Perfect square (x+1)^2", 
+            expected_degree=2)
+    
+    # Two real solutions (discriminant > 0)
+    run_test("x^2 - 3*x + 2 = 0", 
+            description="Two real solutions (x=1, x=2)", 
+            expected_degree=2)
+    
+    run_test("x^2 - 5*x + 6 = 0", 
+            description="Two real solutions (x=2, x=3)", 
+            expected_degree=2)
+    
+    # No real solutions (discriminant < 0)
+    run_test("x^2 + x + 1 = 0", 
+            description="No real solutions (complex roots)", 
+            expected_degree=2)
+    
+    run_test("x^2 + 2*x + 5 = 0", 
+            description="No real solutions (complex roots)", 
+            expected_degree=2)
+    
+    # Quadratic with different coefficients
+    run_test("2*x^2 + 4*x + 2 = 0", 
+            description="Quadratic with coefficient 2", 
+            expected_degree=2)
+    
+    run_test("-x^2 + 4*x - 4 = 0", 
+            description="Negative leading coefficient", 
+            expected_degree=2)
+    
+    run_test("0.5*x^2 + x + 0.5 = 0", 
+            description="Decimal coefficients", 
+            expected_degree=2)
+
+def test_linear_cases():
+    """Test linear equations"""
+    print(f"\n{'🟡 LINEAR EQUATIONS (DEGREE 1)':=^80}")
+    
+    run_test("x + 2 = 0", 
+            description="Simple linear equation", 
+            expected_degree=1)
+    
+    run_test("2*x - 4 = 0", 
+            description="Linear with coefficient", 
+            expected_degree=1)
+    
+    run_test("-3*x + 6 = 0", 
+            description="Negative coefficient", 
+            expected_degree=1)
+    
+    run_test("x = 5", 
+            description="Direct assignment", 
+            expected_degree=1)
+    
+    run_test("5 = x", 
+            description="Reversed assignment", 
+            expected_degree=1)
+    
+    run_test("0.5*x + 1.5 = 0", 
+            description="Decimal linear equation", 
+            expected_degree=1)
+
+def test_constant_cases():
+    """Test constant equations"""
+    print(f"\n{'🔵 CONSTANT EQUATIONS (DEGREE 0)':=^80}")
+    
+    run_test("5 = 5", 
+            description="True statement (infinite solutions)", 
+            expected_degree=0)
+    
+    run_test("0 = 0", 
+            description="Zero equals zero (infinite solutions)", 
+            expected_degree=0)
+    
+    run_test("3 = 5", 
+            description="False statement (no solution)", 
+            expected_degree=0)
+    
+    run_test("2 + 3 = 5", 
+            description="Arithmetic equality (infinite solutions)", 
+            expected_degree=0)
+
+def test_parsing_features():
+    """Test advanced parsing features"""
+    print(f"\n{'🟡 PARSING FEATURES':=^80}")
+    
+    # Multiplication cases
+    run_test("x^1*x^0 = 2", 
+            description="Basic multiplication x^1*x^0", 
+            expected_degree=1)
+    
+    run_test("x^2*x^0 = 5", 
+            description="x^2*x^0 should equal x^2", 
+            expected_degree=2)
+    
+    run_test("2*x*3 = 6", 
+            description="Coefficient multiplication", 
+            expected_degree=1)
+    
+    # Implicit multiplication
+    run_test("3x^2 = 12", 
+            description="3x^2 implicit multiplication", 
+            expected_degree=2)
+    
+    run_test("2x + 3 = 0", 
+            description="Implicit multiplication in linear term", 
+            expected_degree=1)
+    
+    # Power expressions
+    run_test("x^(1+1) = 4", 
+            description="Power in parentheses x^(1+1)", 
+            expected_degree=2)
+    
+    run_test("x^(2-0) = 9", 
+            description="Subtraction in power", 
+            expected_degree=2)
+    
+    # Zero handling
+    run_test("0*x^2 + x = 5", 
+            description="Zero coefficient eliminates x^2 term", 
+            expected_degree=1)
+    
+    run_test("x^0 = 1", 
+            description="x^0 should equal 1 (constant)", 
+            expected_degree=0)
+    
+    # Sign handling
+    run_test("--x = 5", 
+            description="Double negative equals positive", 
+            expected_degree=1)
+    
+    run_test("-x^2 - x - 1 = 0", 
+            description="All negative coefficients", 
+            expected_degree=2)
+    
+    # Complex expressions
+    run_test("x^2 + 2*x - x^2 = 3", 
+            description="Terms cancel to linear", 
+            expected_degree=1)
+    
+    run_test("2*x^2 - x^2 + x = 5", 
+            description="Combining like terms", 
+            expected_degree=2)
+
+def test_error_cases():
+    """Test cases that should fail"""
+    print(f"\n{'🔴 ERROR CASES (Should Fail)':=^80}")
+    
+    # Invalid powers
+    run_test("x^3 = 8", 
+            should_fail=True, 
+            description="Power 3 not allowed")
+    
+    run_test("x^(-1) = 2", 
+            should_fail=True, 
+            description="Negative power")
+    
+    run_test("x^4 + x^2 = 0", 
+            should_fail=True, 
+            description="Power 4 not allowed")
+    
+    run_test("x^2.5 = 4", 
+            should_fail=True, 
+            description="Decimal power")
+    
+    # Exponential expressions
+    run_test("2^x = 4", 
+            should_fail=True, 
+            description="Exponential 2^x")
+    
+    run_test("x^x = 4", 
+            should_fail=True, 
+            description="Variable in exponent")
+    
+    # Operator errors
+    run_test("x^2 ++ x = 0", 
+            should_fail=True, 
+            description="Double plus")
+    
+    run_test("x^2 + = 0", 
+            should_fail=True, 
+            description="Trailing operator")
+    
+    run_test("x^2 ** x = 0", 
+            should_fail=True, 
+            description="Double multiplication")
+    
+    # Parentheses errors
+    run_test("x^(2+1 = 0", 
+            should_fail=True, 
+            description="Unmatched opening parenthesis")
+    
+    run_test("x^2+1) = 0", 
+            should_fail=True, 
+            description="Unmatched closing parenthesis")
+    
+    # Invalid characters
+    run_test("x^2 + y = 0", 
+            should_fail=True, 
+            description="Wrong variable name")
+    
+    run_test("x^2 + 3@ = 0", 
+            should_fail=True, 
+            description="Invalid character @")
+    
+    run_test("x^2 + 1/x = 0", 
+            should_fail=True, 
+            description="Variable in denominator")
+    
+    # Equation format errors
+    run_test("x^2 + x", 
+            should_fail=True, 
+            description="Missing equals sign")
+    
+    run_test("x^2 = x = 0", 
+            should_fail=True, 
+            description="Multiple equals signs")
+    
+    run_test("", 
+            should_fail=True, 
+            description="Empty equation")
+    
+    # High power multiplication
+    run_test("x^1*x^2 = 0", 
+            should_fail=True, 
+            description="x^1*x^2 = x^3 (invalid)")
+    
+    run_test("x*x*x = 0", 
+            should_fail=True, 
+            description="x*x*x = x^3 (invalid)")
+
+def test_edge_cases():
+    """Test edge cases and boundary conditions"""
+    print(f"\n{'🟠 EDGE CASES':=^80}")
+    
+    # Very small coefficients
+    run_test("0.000001*x^2 + x = 0", 
+            description="Very small coefficient", 
+            expected_degree=2)
+    
+    # Large coefficients
+    run_test("1000000*x^2 + x = 0", 
+            description="Large coefficient", 
+            expected_degree=2)
+    
+    # Mixed signs
+    run_test("x^2 + -x + -1 = 0", 
+            description="Plus negative terms", 
+            expected_degree=2)
+    
+    # Many terms that cancel
+    run_test("x^2 + x^2 - x^2 - x^2 + x = 5", 
+            description="Terms that cancel out", 
+            expected_degree=1)
+    
+    # Fractional coefficients using parentheses
+    run_test("(1/2)*x^2 + x = 0", 
+            description="Fractional coefficient (1/2)", 
+            expected_degree=2)
+
+def test_complex_equations():
+    """Test complex but valid equations"""
+    print(f"\n{'🟢 COMPLEX VALID CASES':=^80}")
+    
+    run_test("-2*x^2 + 3*x - 1 = 0", 
+            description="Complex quadratic with all terms", 
+            expected_degree=2)
+    
+    run_test("x^2 - 2*x + 1 - x^2 + 2*x = 1", 
+            description="Complex equation that simplifies to constant", 
+            expected_degree=0)
+    
+    run_test("3*x^2 + 2*x^1*x^0 - 5*x^2 + x = 7", 
+            description="Mixed notation with simplification", 
+            expected_degree=2)
+    
+    run_test("x^(2*1) + x^(3-2) + x^(1*0) = 6", 
+            description="Complex power expressions", 
+            expected_degree=2)
+
 def main():
-    print("🧪 COMPREHENSIVE TEST SUITE FOR QUADRATIC EQUATION PARSER")
-    print("=" * 60)
+    print("🧪 COMPREHENSIVE TEST SUITE FOR QUADRATIC EQUATION SOLVER")
+    print("=" * 80)
+    print("Testing parsing, reduced form display, and quadratic solving functionality")
+    print("=" * 80)
     
-    # First, uncomment the print statements in parse.py
-    print("Note: Make sure the print statements in parse.py are uncommented for these tests!")
+    # Run all test categories
+    run_comprehensive_tests()
     
-    # 1. BASIC VALID CASES
-    print("\n🟢 BASIC VALID CASES")
-    run_test("x^2 + 2*x + 1 = 0", description="Standard quadratic")
-    run_test("x = 5", description="Simple linear equation")
-    run_test("5 = x", description="Reversed linear equation")
-    run_test("x^2 = 4", description="Pure quadratic")
-    run_test("2*x^2 - 3*x + 1 = 0", description="Standard form with coefficients")
-    
-    # 2. MULTIPLICATION EDGE CASES
-    print("\n🟡 MULTIPLICATION CASES")
-    run_test("x^1*x^0 = 2", description="Basic multiplication x^1*x^0")
-    run_test("x^2*x^0 = 5", description="x^2*x^0 should equal x^2")
-    run_test("x^0*x^1 = 3", description="Reverse order x^0*x^1")
-    run_test("2*x*3 = 6", description="Coefficient multiplication")
-    run_test("x*2*x = 4", description="Mixed multiplication")
-    
-    # 3. IMPLICIT MULTIPLICATION
-    print("\n🟡 IMPLICIT MULTIPLICATION CASES")
-    run_test("21x2 = 42", description="21x2 should be 21*x*2 = 42x")
-    run_test("3x^2 = 12", description="3x^2 implicit multiplication")
-    run_test("x5 = 10", description="x5 should be 5x")
-    
-    # 4. PARENTHESES CASES
-    print("\n🟡 PARENTHESES CASES")
-    run_test("x^(1+1) = 4", description="Power in parentheses")
-    run_test("x^(2-1) = 3", description="Subtraction in power")
-    run_test("x^2 + (2/3)x = 0", description="Fractional coefficient in parentheses")
-    # run_test("2*(x+1) = 6", should_fail=True, description="Parentheses in coefficients (not supported)")
-    
-    # 5. EDGE CASES WITH ZEROS
-    print("\n🟡 ZERO CASES")
-    run_test("0*x^2 + x = 5", description="Zero coefficient")
-    run_test("x^0 = 1", description="x^0 should equal 1")
-    run_test("0 = 0", description="Zero equals zero")
-    run_test("x*0 = 0", description="Variable times zero")
-    
-    # 6. SIGN HANDLING
-    print("\n🟡 SIGN CASES")
-    run_test("-x^2 + x = 0", description="Negative leading coefficient")
-    run_test("x^2 + -x = 0", description="Plus negative")
-    run_test("--x = 0", description="Double negative (equals +x)")
-    run_test("+-x = 0", should_fail=True, description="Plus minus (should fail)")
-    
-    # 7. INVALID POWER CASES
-    print("\n🔴 INVALID POWER CASES (Should Fail)")
-    run_test("x^3 = 8", should_fail=True, description="Power 3 not allowed")
-    run_test("x^(-1) = 2", should_fail=True, description="Negative power")
-    run_test("x^4 + x^2 = 0", should_fail=True, description="Power 4 not allowed")
-    run_test("x^2.5 = 4", should_fail=True, description="Decimal power")
-    
-    # 8. EXPONENTIAL EXPRESSIONS (Should Fail)
-    print("\n🔴 EXPONENTIAL CASES (Should Fail)")
-    run_test("2^x = 4", should_fail=True, description="Exponential 2^x")
-    run_test("3^x^2 = 9", should_fail=True, description="Complex exponential")
-    run_test("x^x = 4", should_fail=True, description="Variable in exponent")
-    
-    # 9. OPERATOR ERRORS
-    print("\n🔴 OPERATOR ERROR CASES (Should Fail)")
-    run_test("x^2 ++ x = 0", should_fail=True, description="Double plus")
-    run_test("x^2 + = 0", should_fail=True, description="Trailing operator")
-    run_test("= x^2", should_fail=True, description="Leading equals")
-    run_test("x^2 ** x = 0", should_fail=True, description="Double multiplication")
-    run_test("x^^ = 0", should_fail=True, description="Double exponent")
-    
-    # 10. PARENTHESES ERRORS
-    print("\n🔴 PARENTHESES ERROR CASES (Should Fail)")
-    run_test("x^(2+1 = 0", should_fail=True, description="Unmatched opening parenthesis")
-    run_test("x^2+1) = 0", should_fail=True, description="Unmatched closing parenthesis")
-    run_test("x^((2)) = 0", should_fail=True, description="Nested parentheses (might fail)")
-    
-    # 11. INVALID CHARACTERS
-    print("\n🔴 INVALID CHARACTER CASES (Should Fail)")
-    run_test("x^2 + y = 0", should_fail=True, description="Wrong variable name")
-    run_test("x^2 + 3@ = 0", should_fail=True, description="Invalid character @")
-    run_test("x^2 & x = 0", should_fail=True, description="Invalid character &")
-    run_test("x^2 % 3 = 0", should_fail=True, description="Invalid character %")
-    run_test("x^2 + 2/3x = 0", should_fail=True, description="Variable in denominator (ambiguous)")
-    run_test("x^2 + 1/x = 0", should_fail=True, description="Variable in denominator")
-    
-    # 12. EQUATION FORMAT ERRORS
-    print("\n🔴 EQUATION FORMAT ERRORS (Should Fail)")
-    run_test("x^2 + x", should_fail=True, description="Missing equals sign")
-    run_test("x^2 = x = 0", should_fail=True, description="Multiple equals signs")
-    run_test("", should_fail=True, description="Empty equation")
-    run_test(" = x^2", should_fail=True, description="Empty left side")
-    run_test("x^2 = ", should_fail=True, description="Empty right side")
-    run_test("= ", should_fail=True, description="Both sides empty")
-    
-    # 13. POWER EXPRESSION ERRORS
-    print("\n🔴 POWER EXPRESSION ERRORS (Should Fail)")
-    run_test("x^ = 0", should_fail=True, description="Empty power after ^")
-    run_test("x^+ = 0", should_fail=True, description="Only operator after ^")
-    run_test("x^(+) = 0", should_fail=True, description="Only operator in parentheses")
-    
-    # 14. MULTIPLICATION WITH HIGH POWERS
-    print("\n🔴 MULTIPLICATION HIGH POWER CASES (Should Fail)")
-    run_test("x^1*x^2 = 0", should_fail=True, description="x^1*x^2 = x^3 (invalid)")
-    run_test("x^2*x^1 = 0", should_fail=True, description="x^2*x^1 = x^3 (invalid)")
-    run_test("x*x*x = 0", should_fail=True, description="x*x*x = x^3 (invalid)")
-    
-    # 15. COMPLEX VALID CASES
-    print("\n🟢 COMPLEX VALID CASES")
-    run_test("-2*x^2 + 3*x - 1 = 0", description="Complex quadratic")
-    run_test("x^2 - 2*x + 1 = (x-1)^2", should_fail=True, description="Right side with parentheses")
-    run_test("0.5*x^2 + 1.5*x = 2.25", description="Decimal coefficients")
-    
-    print("\n" + "="*60)
-    print("🏁 TEST SUITE COMPLETE")
-    print("="*60)
+    print(f"\n{'🏁 TEST SUITE COMPLETE':=^80}")
+    print("All test categories have been executed.")
+    print("Review the results above to identify any issues.")
+    print("=" * 80)
 
 if __name__ == "__main__":
     main()

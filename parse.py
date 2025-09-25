@@ -475,24 +475,21 @@ def parse(equation):
         except (ValueError, SyntaxError):
             raise ValueError(f"Invalid power expression: {expr}")
 
-    print("Left side terms:", organizeEqn(left))
-    print("Right side terms:", organizeEqn(right))
+    left_terms = organizeEqn(left)
+    right_terms = organizeEqn(right)
+    
+    # Move right side terms to left (subtract right side from left side)
+    coeffs = {}
+    
+    # Add left side terms
+    for power, coeff in left_terms.items():
+        coeffs[power] = coeffs.get(power, 0) + coeff
+    
+    # Subtract right side terms  
+    for power, coeff in right_terms.items():
+        coeffs[power] = coeffs.get(power, 0) - coeff
+    
+    return coeffs
 
 
-def main():
-    if len(sys.argv) != 2:
-        print("Usage format: ./parse.py \"equation\"")
-        sys.exit(1)
 
-    parse(sys.argv[1])
-    # equation = sys.argv[1]
-    # coeffs = parse_equation(equation)
-
-    # print("Reduced form:", reduce_form(coeffs), "= 0")
-    # deg = degree(coeffs)
-    # print("Polynomial degree:", deg)
-
-    # solve(coeffs)
-
-if __name__ == "__main__":
-    main()
