@@ -24,70 +24,70 @@ def sqrt(num):
         a += step
     return (round(a, 2))
 
-def parse_equation(equation):
-    equation = equation.replace(" ", "")
-    left, right = equation.split("=")
+# def parse_equation(equation):
+#     equation = equation.replace(" ", "")
+#     left, right = equation.split("=")
 
-    # can be handled even better!
-    def check_side(side):
-        for c in side:
-            if c == "+" or c == "-":
-                if side[side.index(c) + 1] not in "0123456789Xx":
-                    print(f"Error: Unsupported format near '{c}'")
-                    sys.exit(1)
-            if c.isalpha() and c not in ("X", "x"):
-                print(f"Error: Unsupported format, must use 'X' as variable name, {c} not accepted")
-                sys.exit(1)
-            if c in ("x"):
-                print(f"Error: Unsupported format, must use 'X' as variable name, {c} not accepted.")
-                sys.exit(1)
+#     # can be handled even better!
+#     def check_side(side):
+#         for c in side:
+#             if c == "+" or c == "-":
+#                 if side[side.index(c) + 1] not in "0123456789Xx":
+#                     print(f"Error: Unsupported format near '{c}'")
+#                     sys.exit(1)
+#             if c.isalpha() and c not in ("X", "x"):
+#                 print(f"Error: Unsupported format, must use 'X' as variable name, {c} not accepted")
+#                 sys.exit(1)
+#             if c in ("x"):
+#                 print(f"Error: Unsupported format, must use 'X' as variable name, {c} not accepted.")
+#                 sys.exit(1)
 
-    check_side(left)
-    check_side(right)
+#     check_side(left)
+#     check_side(right)
 
-    def parse_side(side):
-        coeffs = {}
+#     def parse_side(side):
+#         coeffs = {}
 
-        tokens = re.findall(r'([+-]?\s*\d*\.?\d*)\s*\*?\s*X(?:\^([+-]?\d*\.?\d+))?|([+-]?\s*\d+\.?\d*)', side)
+#         tokens = re.findall(r'([+-]?\s*\d*\.?\d*)\s*\*?\s*X(?:\^([+-]?\d*\.?\d+))?|([+-]?\s*\d+\.?\d*)', side)
 
-        for coeff, power, const in tokens:
-            coeff = coeff.replace(" ", "")
-            const = const.replace(" ", "")
+#         for coeff, power, const in tokens:
+#             coeff = coeff.replace(" ", "")
+#             const = const.replace(" ", "")
 
-            if const:
-                c = float(const)
-                coeffs[0] = coeffs.get(0, 0) + c
-            else:
-                if coeff in ("", "+"):
-                    c = 1.0
-                elif coeff == "-":
-                    c = -1.0
-                else:
-                    c = float(coeff)
+#             if const:
+#                 c = float(const)
+#                 coeffs[0] = coeffs.get(0, 0) + c
+#             else:
+#                 if coeff in ("", "+"):
+#                     c = 1.0
+#                 elif coeff == "-":
+#                     c = -1.0
+#                 else:
+#                     c = float(coeff)
 
-                if power == "":
-                    p = 1
-                elif power is None:
-                    p = 1
-                else:
-                    if (float(power)) % 1 != 0:
-                        print("Error: Decimal Power not supported.")
-                        sys.exit(1)
-                        return
-                    else:
-                        p = int(power)
+#                 if power == "":
+#                     p = 1
+#                 elif power is None:
+#                     p = 1
+#                 else:
+#                     if (float(power)) % 1 != 0:
+#                         print("Error: Decimal Power not supported.")
+#                         sys.exit(1)
+#                         return
+#                     else:
+#                         p = int(power)
 
-                coeffs[p] = coeffs.get(p, 0) + c
+#                 coeffs[p] = coeffs.get(p, 0) + c
 
-        return coeffs
+#         return coeffs
 
-    left_terms = parse_side(left)
-    right_terms = parse_side(right)
+#     left_terms = parse_side(left)
+#     right_terms = parse_side(right)
 
-    for p, c in right_terms.items():
-        left_terms[p] = left_terms.get(p, 0.0) - c
+#     for p, c in right_terms.items():
+#         left_terms[p] = left_terms.get(p, 0.0) - c
 
-    return left_terms
+#     return left_terms
 
 
 def reduce_form(coeffs):

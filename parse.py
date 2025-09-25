@@ -33,26 +33,146 @@ def parse(equation):
     try:
         left, right = equation.split('=')
     except ValueError as e:
-        print(f"Error parsing equation, (does your eqn contain one '=' sign?)")
+        print("Error: Invalid equation format")
         sys.exit(1)
 
+
+    def expand_distributive(expression):
+        """Expand simple distributive multiplication like 2*(x+1) to 2*x+2*1"""
+        # Handle patterns like coeff*(term1+term2) or (term1+term2)*coeff
+        while True:
+            # Look for distributive patterns
+            match = re.search(r'([^()]*)\*\(([^)]+)\)|\(([^)]+)\)\*([^()]*)', expression)
+            if not match:
+                break
+                
+            if match.group(1) is not None:
+                # Pattern: coeff*(expression)
+                coeff_str = match.group(1)
+                expr_str = match.group(2)
+            else:
+                # Pattern: (expression)*coeff
+                expr_str = match.group(3)
+                coeff_str = match.group(4)
+            
+            # Parse coefficient
+            try:
+                coeff = float(coeff_str) if coeff_str else 1
+            except ValueError:
+                print("Error: Invalid coefficient in distributive multiplication")
+                sys.exit(1)
+            
+            # Check for complex expressions
+            if re.search(r'[*/^]', expr_str):
+                print("Error: Complex expressions in parentheses not supported")
+                sys.exit(1)
+            
+            # Split expression by + and - while preserving signs
+            terms = re.findall(r'[+-]?[^+-]+', expr_str)
+            
+            # Expand each term
+            expanded_terms = []
+            for term in terms:
+                term = term.strip()
+                if not term:
+                    continue
+                
+                # Handle signs
+                if term.startswith('+'):
+                    term = term[1:]
+                    expanded_coeff = coeff
+                elif term.startswith('-'):
+                    term = term[1:]
+                    expanded_coeff = -coeff
+                else:
+                    expanded_coeff = coeff
+                
+                # Create expanded term
+                if term == '1' or term == '':
+                    expanded_terms.append(f"{expanded_coeff}")
+                elif 'x' in term.lower():
+                    if expanded_coeff == 1:
+                        expanded_terms.append(f"{term}")
+                    elif expanded_coeff == -1:
+                        expanded_terms.append(f"-{term}")
+                    else:
+                        expanded_terms.append(f"{expanded_coeff}*{term}")
+                else:
+                    # Numeric term
+                    try:
+                        numeric_val = float(term)
+                        result = expanded_coeff * numeric_val
+                        expanded_terms.append(f"{result}")
+                    except ValueError:
+                        expanded_terms.append(f"{expanded_coeff}*{term}")
+            
+            # Join expanded terms
+            expanded = ""
+            for i, term in enumerate(expanded_terms):
+                if i == 0:
+                    expanded = term
+                else:
+                    if term.startswith('-'):
+                        expanded += term
+                    else:
+                        expanded += "+" + term
+            
+            # Replace the original expression with expanded version
+            expression = expression[:match.start()] + expanded + expression[match.end():]
+        
+        return expression
 
     def organizeEqn(side):
         side = side.replace(" ", "")  # remove whitespace
         
+        # Expand distributive multiplication
+        side = expand_distributive(side)
+        
+        # Check for balanced parentheses
+        paren_count = 0
+        for char in side:
+            if char == '(':
+                paren_count += 1
+            elif char == ')':
+                paren_count -= 1
+                if paren_count < 0:
+                    print("Error: Unmatched closing parenthesis")
+                    sys.exit(1)
+        
+        if paren_count > 0:
+            print("Error: Unmatched opening parenthesis")
+            sys.exit(1)
+        
+        # After distributive expansion, remaining parentheses should only be in power expressions
+        # Check if remaining parentheses are only after ^ symbols
+        if '(' in side or ')' in side:
+            # Check if all parentheses are in valid power expressions (after ^)
+            temp_side = side
+            while True:
+                power_match = re.search(r'\^[^()]*\([^)]*\)', temp_side)
+                if not power_match:
+                    break
+                # Replace this valid power expression with a placeholder
+                temp_side = temp_side[:power_match.start()] + "^VALID" + temp_side[power_match.end():]
+            
+            # If there are still parentheses left, they're invalid
+            if '(' in temp_side or ')' in temp_side:
+                print("Error: Unsupported parentheses expression")
+                sys.exit(1)
+        
         # Check for consecutive operator signs (2 or more operators following each other)
         if re.search(r'[+\-*^]{2,}', side):
-            print(f"Error: Consecutive operator signs detected. Two or more operators cannot follow each other.")
+            print("Error: Consecutive operators")
             sys.exit(1)
         
         # Check for multiple ^ in the same term (like 2^1^2)
         if re.search(r'[0-9]\^[^+\-]*\^', side):
-            print(f"Error: Multiple exponentiation operators (^) in the same term are not allowed.")
+            print("Error: Multiple exponentiation operators")
             sys.exit(1)
         
         # Check for equation sides ending with operators
         if re.search(r'[+\-*^]$', side):
-            print(f"Error: Equation cannot end with an operator")
+            print("Error: Trailing operator")
             sys.exit(1)
         
         terms = {}  # dictionary of terms where key=power, value=coefficient
@@ -68,19 +188,19 @@ def parse(equation):
             # check for any other invalid characters
             try:
                 if re.search(r'[^0-9Xx\^\+\-\*/(). ]', term):
-                    raise ValueError(f"Invalid characters spotted, only 0-9, X, ^, +, -, *, /, (, ), . are allowed")
+                    raise ValueError("Invalid characters")
             except ValueError as e:
-                print(f"Error parsing term '{term}': {e}")
+                print(f"Error: {e}")
                 sys.exit(1)
             
             # if it is empty after ^ there should be atleast + and number otherwise it is an error
             if re.search(r'\^[\+\-\*/(). ]*$', term):
-                print(f"Error parsing term '{term}': Power cannot be empty after '^'")
+                print("Error: Empty power")
                 sys.exit(1)
             
             # Check for trailing operators
             if re.search(r'[+\-*^]$', term):
-                print(f"Error parsing term '{term}': Term cannot end with an operator")
+                print("Error: Term ends with operator")
                 sys.exit(1)
             
 
@@ -107,11 +227,16 @@ def parse(equation):
         elif term.startswith('+'):
             term = term[1:]
         
-        # Handle multiplication in the term (e.g., "x^2*0", "0*x^2", "2*x")
+        # Handle multiplication in the term (e.g., "x^2*0", "0*x^2", "2*x", "x^1*x^0")
         if '*' in term:
+            # At this point, parentheses should have been expanded, so reject any remaining parentheses
+            if '(' in term or ')' in term:
+                print("Error: Unexpected parentheses in term")
+                sys.exit(1)
+            
             parts = term.split('*')
             coeff = 1
-            power = 0
+            total_power = 0
             has_variable = False
             
             for part in parts:
@@ -126,6 +251,11 @@ def parse(equation):
                         var_coeff_part = match.group(1) or '1'
                         power_part = match.group(2)
                         
+                        # Check for parentheses in coefficient part
+                        if '(' in var_coeff_part or ')' in var_coeff_part:
+                            print("Error: Parentheses in coefficients not supported")
+                            sys.exit(1)
+                        
                         # Parse variable coefficient
                         if var_coeff_part == '' or var_coeff_part == '+':
                             var_coeff = 1
@@ -135,34 +265,43 @@ def parse(equation):
                             try:
                                 var_coeff = float(var_coeff_part)
                             except ValueError:
-                                raise ValueError(f"Invalid variable coefficient: {var_coeff_part}")
+                                print("Error: Invalid coefficient format")
+                                sys.exit(1)
                         
                         coeff *= var_coeff
                         
-                        # Parse power
+                        # Parse power and add to total power (since x^a * x^b = x^(a+b))
                         if power_part is None:
-                            power = 1
+                            part_power = 1
                         else:
                             power_expr = power_part[1:]  # Remove ^
-                            power = parse_power_expression(power_expr)
+                            part_power = parse_power_expression(power_expr)
+                        
+                        total_power += part_power
                 else:
                     # This part is a number coefficient
+                    # Check for parentheses in number coefficients
+                    if '(' in part or ')' in part:
+                        print("Error: Parentheses in coefficients not supported")
+                        sys.exit(1)
+                    
                     try:
                         num_coeff = float(part) if part else 1
                         coeff *= num_coeff
                     except ValueError:
-                        raise ValueError(f"Invalid coefficient: {part}")
+                        print("Error: Invalid coefficient format")
+                        sys.exit(1)
             
             if has_variable:
-                # Validate power is 0, 1, or 2
+                # Validate total power is 0, 1, or 2
                 try:
-                    if power not in [0, 1, 2]:
-                        raise ValueError(f"Invalid power: {power}. Only powers 0, 1, 2 are allowed.")
+                    if total_power not in [0, 1, 2]:
+                        raise ValueError(f"Invalid power: {total_power}")
                 except ValueError as e:
-                    print(f"Error parsing term '{term}': {e}")
+                    print(f"Error: {e}")
                     sys.exit(1)
                     
-                return sign * coeff, power
+                return sign * coeff, total_power
             else:
                 # No variable, this is a constant term
                 return sign * coeff, 0
@@ -171,7 +310,7 @@ def parse(equation):
         elif 'X' in term.upper():
             # First check if this is an exponential expression like "2^x" 
             if re.search(r'\d+\^[Xx]', term, re.IGNORECASE):
-                print(f"Error: Exponential expressions like '{term}' are not allowed. Only polynomial expressions are supported.")
+                print("Error: Exponential expressions not allowed")
                 sys.exit(1)
             
             # Parse terms with implicit multiplication (like "21x2" = 21*x*2)
@@ -186,7 +325,7 @@ def parse(equation):
                 
                 # Check if coefficient part contains ^ (which would be invalid)
                 if '^' in coeff_part:
-                    print(f"Error: Invalid term format '{term}'. Exponential expressions in coefficients are not supported.")
+                    print("Error: Invalid coefficient format")
                     sys.exit(1)
                 
                 # Parse coefficient
@@ -220,21 +359,21 @@ def parse(equation):
                     # Validate power is 0, 1, or 2
                     try:
                         if power not in [0, 1, 2]:
-                            raise ValueError(f"Invalid power: {power}. Only powers 0, 1, 2 are allowed.")
+                            raise ValueError(f"Invalid power: {power}")
                     except ValueError as e:
-                        print(f"Error parsing term '{term}': {e}")
+                        print(f"Error: {e}")
                         sys.exit(1)
 
                 return sign * coeff, power
             else:
-                print(f"Error parsing term '{term}': Invalid term format")
+                print("Error: Invalid term format")
                 sys.exit(1)
         else:
             # Handle constant terms and number powers (e.g., "2^3", "5")
             if '^' in term:
                 # Check for multiple ^ operators which should be an error
                 if term.count('^') > 1:
-                    print(f"Error: Multiple consecutive ^ operators in '{term}' are not allowed.")
+                    print("Error: Multiple ^ operators")
                     sys.exit(1)
                 
                 # Check if this is a number raised to a power
@@ -244,7 +383,7 @@ def parse(equation):
                 
                 # Check if power contains variable - this is invalid (exponential, not polynomial)
                 if 'X' in power_part.upper():
-                    print(f"Error: Exponential expressions like '{term}' are not allowed. Only polynomial expressions are supported.")
+                    print("Error: Variables in exponents not allowed")
                     sys.exit(1)
                 
                 try:
@@ -310,7 +449,6 @@ def main():
     # print("Polynomial degree:", deg)
 
     # solve(coeffs)
-
 
 if __name__ == "__main__":
     main()
