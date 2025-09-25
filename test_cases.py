@@ -66,6 +66,7 @@ def run_comprehensive_tests():
     test_linear_cases()
     test_constant_cases()
     test_parsing_features()
+    test_reported_issues()
     test_error_cases()
     test_edge_cases()
     test_complex_equations()
@@ -220,6 +221,33 @@ def test_parsing_features():
             description="Combining like terms", 
             expected_degree=2)
 
+def test_reported_issues():
+    """Test specific issues reported by users"""
+    print(f"\n{'🔍 REPORTED ISSUES':=^80}")
+    
+    # Issues with reduced form display and solving
+    run_test("(1/2)*x^2 + x = 0", 
+            description="Fractional coefficient parsing", 
+            expected_degree=2)
+    
+    run_test("x^(2*1) + x^(3-2) + x^(1*0) = 6", 
+            description="Complex power expressions in parentheses", 
+            expected_degree=2)
+    
+    # Sign handling edge cases
+    run_test("x^2 + 2*x + 1 = 0", 
+            description="Perfect square for reduced form check", 
+            expected_degree=2)
+    
+    # Coefficient of 1 handling
+    run_test("1*x^2 + 1*x + 1 = 0", 
+            description="Explicit coefficient of 1", 
+            expected_degree=2)
+    
+    run_test("-1*x^2 - 1*x - 1 = 0", 
+            description="Explicit coefficient of -1", 
+            expected_degree=2)
+
 def test_error_cases():
     """Test cases that should fail"""
     print(f"\n{'🔴 ERROR CASES (Should Fail)':=^80}")
@@ -240,6 +268,10 @@ def test_error_cases():
     run_test("x^2.5 = 4", 
             should_fail=True, 
             description="Decimal power")
+    
+    run_test("0.5 * X^2 - 0.5 * X^1.5 = 0", 
+            should_fail=True, 
+            description="Decimal power X^1.5 should fail")
     
     # Exponential expressions
     run_test("2^x = 4", 
@@ -263,6 +295,18 @@ def test_error_cases():
             should_fail=True, 
             description="Double multiplication")
     
+    run_test("0.5 * X^2 -*- 0.5 * X^1 = 0", 
+            should_fail=True, 
+            description="Invalid operator sequence -*-")
+    
+    run_test("X^0 + X^^0 = 2", 
+            should_fail=True, 
+            description="Double exponent operator ^^")
+    
+    run_test("X^0 + X^0 = 2+", 
+            should_fail=True, 
+            description="Trailing operator after equals")
+    
     # Parentheses errors
     run_test("x^(2+1 = 0", 
             should_fail=True, 
@@ -272,10 +316,14 @@ def test_error_cases():
             should_fail=True, 
             description="Unmatched closing parenthesis")
     
-    # Invalid characters
+    # Invalid characters and variables
     run_test("x^2 + y = 0", 
             should_fail=True, 
-            description="Wrong variable name")
+            description="Wrong variable name (y)")
+    
+    run_test("0.5 * X^2 - 0.5 * Y^1 = 0", 
+            should_fail=True, 
+            description="Wrong variable Y should fail")
     
     run_test("x^2 + 3@ = 0", 
             should_fail=True, 
@@ -321,9 +369,13 @@ def test_edge_cases():
             description="Large coefficient", 
             expected_degree=2)
     
-    # Mixed signs
+    # Mixed signs and double negatives
     run_test("x^2 + -x + -1 = 0", 
             description="Plus negative terms", 
+            expected_degree=2)
+    
+    run_test("0.5 * X^2 -- 0.5 * X^1 = 0", 
+            description="Double negative should become positive", 
             expected_degree=2)
     
     # Many terms that cancel
@@ -331,9 +383,37 @@ def test_edge_cases():
             description="Terms that cancel out", 
             expected_degree=1)
     
+    # Zero coefficient cases
+    run_test("X^2 * 0 - 1*X^1 = 2", 
+            description="X^2 with zero coefficient", 
+            expected_degree=1)
+    
+    run_test("0 * X^2 - 1*X^1 = 2", 
+            description="Zero coefficient at start", 
+            expected_degree=1)
+    
+    # Multiplication with constants
+    run_test("X^1 * X^0 = 2", 
+            description="X^1 * X^0 multiplication", 
+            expected_degree=1)
+    
+    run_test("X^1 * 1 - X^0 = 2", 
+            description="X^1 * 1 coefficient", 
+            expected_degree=1)
+    
     # Fractional coefficients using parentheses
     run_test("(1/2)*x^2 + x = 0", 
             description="Fractional coefficient (1/2)", 
+            expected_degree=2)
+    
+    # Complex reduced forms
+    run_test("X^0 + X^0 = 2", 
+            description="Multiple X^0 terms", 
+            expected_degree=0)
+    
+    # Spacing variations
+    run_test(" 0.5 * X^2 - 0.5 * X^1 = 0 ", 
+            description="Extra spaces around equation", 
             expected_degree=2)
 
 def test_complex_equations():
