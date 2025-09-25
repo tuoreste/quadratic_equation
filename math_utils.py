@@ -9,6 +9,7 @@ def abs(x):
     return x
 
 """Custom square root implementation using Newton's method."""
+"""
 def sqrt(num):
     a = 1.0
     step = 0.1
@@ -26,3 +27,18 @@ def sqrt(num):
                 return (round(a, 2))
         a += step
     return (round(a, 2))
+"""
+
+def sqrt(num):
+    if num < 0:
+        raise ValueError("Cannot compute square root of negative number")
+    x = num
+    tolerance = 0.01
+    if num == 0:
+        return 0.0
+    guess = num / 2.0
+    while abs(guess * guess - num) > tolerance:
+        guess = (guess + num / guess) / 2.0
+    return round(guess, 2)
+
+
