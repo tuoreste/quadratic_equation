@@ -6,6 +6,7 @@ Handles parsing of mathematical expressions into coefficient dictionaries.
 import re
 import sys
 
+"""Split expression into terms while respecting parentheses depth."""
 def split_terms_with_parentheses(expression):
     terms = []
     current_term = ""
@@ -32,7 +33,9 @@ def split_terms_with_parentheses(expression):
     
     return terms
 
+"""Expand distributive multiplication like 2*(x+1) to 2*x+2*1 and remove simple grouping parentheses."""
 def expand_distributive(expression):
+    
     while True:
         simple_paren_match = re.search(r'\(([^()]+)\)', expression)
         if not simple_paren_match:
@@ -40,13 +43,11 @@ def expand_distributive(expression):
             
         full_match = simple_paren_match.group(0)
         inner_expr = simple_paren_match.group(1)
-
         start_pos = simple_paren_match.start()
         end_pos = simple_paren_match.end()
 
         has_mult_before = start_pos > 0 and expression[start_pos - 1] == '*'
         has_mult_after = end_pos < len(expression) and expression[end_pos] == '*'
-
         has_power_before = start_pos > 0 and expression[start_pos - 1] == '^'
         
         if not has_mult_before and not has_mult_after and not has_power_before:
@@ -70,11 +71,6 @@ def expand_distributive(expression):
             coeff_str = match.group(4)
 
         if not re.search(r'[Xx]', expr_str, re.IGNORECASE) and re.match(r'^[0-9+\-*/.\s]+$', expr_str):
-            if match.group(1) is not None:
-                replacement = f"{coeff_str}*({expr_str})"
-            else:
-                replacement = f"({expr_str})*{coeff_str}"
-
             try:
                 if re.match(r'^[0-9+\-*/.\s]+$', expr_str):
                     coeff_value = eval(expr_str)
@@ -101,8 +97,8 @@ def expand_distributive(expression):
             sys.exit(1)
 
         terms = re.findall(r'[+-]?[^+-]+', expr_str)
-
         expanded_terms = []
+        
         for term in terms:
             term = term.strip()
             if not term:
@@ -148,6 +144,7 @@ def expand_distributive(expression):
     
     return expression
 
+"""Parse and evaluate power expressions, ensuring result is an integer."""
 def parse_power_expression(expr):
     if not expr:
         return 1
